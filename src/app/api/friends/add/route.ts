@@ -1,8 +1,7 @@
 import { fetchRedis } from "@/helpers/redis";
-import { authOptions } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { addFriendValidator } from "@/lib/validations/add-friend";
-import { getServerSession } from "next-auth";
 import { z } from "zod";
 
 export async function POST(req: Request) {
@@ -17,7 +16,7 @@ export async function POST(req: Request) {
       return new Response("This person does not exist", { status: 400 });
     }
 
-    const session = await getServerSession(authOptions);
+    const session = await getSession();
 
     if (!session) {
       return new Response("Unauthorized", { status: 401 });
@@ -56,7 +55,7 @@ export async function POST(req: Request) {
     }
 
     // valid request, send friend request
-    db.sadd(`user:${idToAdd}:incoming_friend_requests`, session.user.id);
+    await db.sadd(`user:${idToAdd}:incoming_friend_requests`, session.user.id);
 
     return new Response("OK");
   } catch (error) {

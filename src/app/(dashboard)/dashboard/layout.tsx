@@ -2,8 +2,7 @@ import { Icon, Icons } from "@/components/Icons";
 import SignOutButton from "@/components/SignOutButton";
 import FriendRequestsSidebarOption from "@/components/ui/FriendRequestsSidebarOption";
 import { fetchRedis } from "@/helpers/redis";
-import { authOptions } from "@/lib/auth";
-import { getServerSession } from "next-auth";
+import { getSession } from "@/lib/auth";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -30,7 +29,7 @@ const sidebarOptions: SidebarOption[] = [
 ];
 
 const Layout: FC<LayoutProps> = async ({ children }) => {
-  const session = await getServerSession(authOptions);
+  const session = await getSession();
   if (!session) notFound();
 
   const unseenRequestCount = (

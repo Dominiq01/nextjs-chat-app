@@ -18,6 +18,20 @@ export async function fetchRedis(command: Commands, ...args: (string | number)[]
   }
 
   const data = await res.json();
-  
+
   return data.result;
+}
+
+export async function getFriendsByUserId(userId: string) {
+  const friendsIds = (await fetchRedis("smembers", `user:${userId}:friends`)) as string[];
+
+  const friends = await Promise.all(
+    friendsIds.map(async (friendId) => {
+      const friend = JSON.parse(await fetchRedis("get", `user:${friendId}`));
+      
+      return friend as User;
+    })
+  );
+
+  return friends;
 }

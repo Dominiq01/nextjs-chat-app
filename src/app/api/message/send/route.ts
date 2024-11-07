@@ -2,6 +2,8 @@ import { MAX_LENGTH } from "@/helpers/constants";
 import { fetchRedis } from "@/helpers/redis";
 import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { pusherServer } from "@/lib/pusher";
+import { toPusherKey } from "@/lib/utils";
 import { Message, messageValidator } from "@/lib/validations/message";
 import { nanoid } from "nanoid";
 import { z } from "zod";
@@ -55,6 +57,14 @@ export async function POST(req: Request) {
     };
 
     const message = messageValidator.parse(messageData);
+
+    await pusherServer.trigger(toPusherKey(`chat:${chatId}:messages`), 'new_message', message);
+    
+    await pusherServer.trigger(toPusherKey(`user:${friendId}:chats`), 'new_unseenMessage', {
+      ...message,
+      senderImg: sender.image,
+      senderName: sender.name
+    })
 
     await db.zadd(`chat:${chatId}:messages`, {
       score: timestamp,

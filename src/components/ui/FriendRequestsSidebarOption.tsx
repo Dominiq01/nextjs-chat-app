@@ -1,8 +1,11 @@
-"use client"
+"use client";
 
+import { fetchRedis } from "@/helpers/redis";
+import { pusherClient } from "@/lib/pusher";
+import { toPusherKey } from "@/lib/utils";
 import { User } from "lucide-react";
 import Link from "next/link";
-import { FC, useState } from "react";
+import { FC, useEffect, useState } from "react";
 
 interface FriendRequestsSidebarOptionProps {
   sessionId: string;
@@ -11,9 +14,28 @@ interface FriendRequestsSidebarOptionProps {
 
 const FriendRequestsSidebarOption: FC<FriendRequestsSidebarOptionProps> = ({
   sessionId,
-  initialUnseenRequestCount
+  initialUnseenRequestCount,
 }) => {
-  const [unseenRequestCount, setunseenRequestCount] = useState(initialUnseenRequestCount);
+  const [unseenRequestCount, setUnseenRequestCount] = useState(initialUnseenRequestCount);
+
+  useEffect(() => {
+    const pusherChannelName = toPusherKey(`user:${sessionId}:incoming_friend_requests`);
+
+    pusherClient.subscribe(pusherChannelName);
+
+    const friendRequestsHandler = () => {
+      setUnseenRequestCount((prev) => prev + 1);
+    };
+
+    pusherClient.bind("incoming_friend_requests", friendRequestsHandler);
+    
+
+    return () => {
+      pusherClient.unsubscribe(pusherChannelName);
+      pusherClient.unbind("incoming_friend_requests", friendRequestsHandler);
+    };
+  }, []);
+
   return (
     <Link
       href="/dashboard/requests"
@@ -25,7 +47,7 @@ const FriendRequestsSidebarOption: FC<FriendRequestsSidebarOptionProps> = ({
       <p className="truncate">Friend requests</p>
 
       {unseenRequestCount > 0 ? (
-        <div className='rounded-full w-5 h-5 text-xs flex justify-center items-center text-white bg-indigo-600 pr-[0.1em]'>
+        <div className="rounded-full w-5 h-5 text-xs flex justify-center items-center text-white bg-indigo-600 pr-[0.1em]">
           {unseenRequestCount}
         </div>
       ) : null}

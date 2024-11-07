@@ -1,8 +1,11 @@
 "use client";
 
-import { chatHrefConstructor } from "@/lib/utils";
+import { pusherClient } from "@/lib/pusher";
+import { chatHrefConstructor, toPusherKey } from "@/lib/utils";
 import { usePathname, useRouter } from "next/navigation";
 import { FC, useEffect, useState } from "react";
+import toast from "react-hot-toast";
+import UnseenChatToast from "./ui/UnseenChatToast";
 
 interface SidebarChatListProps {
   friends: User[];
@@ -13,7 +16,55 @@ const SidebarChatList: FC<SidebarChatListProps> = ({ friends, sessionId }) => {
   const router = useRouter();
   const pathname = usePathname();
   // this state keeps track of the messages only when we are online
-  const [unseenMessages, setUnseenMessages] = useState<Message[]>();
+  const [unseenMessages, setUnseenMessages] = useState<Message[]>([]);
+
+  useEffect(() => {
+    const pusherChannelChats = toPusherKey(`user:${sessionId}:chats`);
+    const pusherChannelFriends = toPusherKey(`user:${sessionId}:friends`);
+
+    pusherClient.subscribe(pusherChannelChats);
+    pusherClient.subscribe(pusherChannelFriends);
+
+    const unseenMessageHandler = (
+      message: Message & {
+        senderImg: string;
+        senderName: string;
+      }
+    ) => {
+      const shouldNotify =
+        pathname !== `/dashboard/chat/${chatHrefConstructor(sessionId, message.senderId)}`;
+      
+      if (!shouldNotify) return;
+
+      toast.custom((toastValue) => (
+        <UnseenChatToast
+          toastValue={toastValue}
+          sessionId={sessionId}
+          senderId={message.senderId}
+          senderImg={message.senderImg}
+          senderName={message.senderName}
+          senderMessage={message.text}
+        />
+      ));
+
+      setUnseenMessages((prev) => [message, ...prev]);
+    };
+
+    const newFriendHandler = () => {
+      router.refresh();
+    };
+
+    pusherClient.bind("new_unseenMessage", unseenMessageHandler);
+    pusherClient.bind("new_friend", newFriendHandler);
+
+    return () => {
+      pusherClient.unsubscribe(pusherChannelChats);
+      pusherClient.unsubscribe(pusherChannelFriends);
+
+      pusherClient.unbind("new_unseenMessage", unseenMessageHandler);
+      pusherClient.unbind("new_friend", newFriendHandler);
+    };
+  }, [pathname, router]);
 
   useEffect(() => {
     if (pathname?.includes("chat")) {

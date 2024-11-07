@@ -55,7 +55,6 @@ const page: FC<PageProps> = async ({ params }) => {
   const chatPartner = JSON.parse(
     await fetchRedis("get", `user:${chatPartnerId}`)
   ) as User;
-  console.log(chatPartner);
 
   const initialMessages = await getChatMessages(chatId);
 
@@ -85,7 +84,13 @@ const page: FC<PageProps> = async ({ params }) => {
         </div>
       </div>
 
-      <Messages initialMessages={initialMessages} sessionId={session.user.id} chatPartner={chatPartner} sessionImg={session.user.image}/>
+      <Messages
+        chatId={chatId}
+        initialMessages={initialMessages}
+        sessionId={session.user.id}
+        chatPartner={chatPartner}
+        sessionImg={session.user.image}
+      />
 
       <MessageInput chatId={chatId} chatPartner={chatPartner} />
     </div>

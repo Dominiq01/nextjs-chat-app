@@ -22,13 +22,10 @@ const MessageInput: FC<MessageInputProps> = ({ chatPartner, chatId }) => {
   }, [input]);
 
   const sendMessage = async () => {
-    setIsLoading(true);
-
     if (input.trim() === "") {
-      toast.error("Please type some message.");
-      setIsLoading(false);
       return;
     }
+    setIsLoading(true);
 
     try {
       await axios.post("/api/message/send", { text: input, chatId });

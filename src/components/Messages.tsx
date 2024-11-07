@@ -1,25 +1,44 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { pusherClient } from "@/lib/pusher";
+import { cn, toPusherKey } from "@/lib/utils";
 import { Message } from "@/lib/validations/message";
 import { format } from "date-fns";
 import Image from "next/image";
-import { FC, useRef, useState } from "react";
+import { FC, useEffect, useRef, useState } from "react";
 
 interface MessagesProps {
   initialMessages: Message[];
   sessionId: string;
   sessionImg: string | null | undefined;
   chatPartner: User;
+  chatId: string;
 }
 
 const formatTimestamp = (timestamp: number) => {
   return format(timestamp, "HH:MM");
 };
 
-const Messages: FC<MessagesProps> = ({ initialMessages, sessionId, sessionImg, chatPartner }) => {
+const Messages: FC<MessagesProps> = ({ initialMessages, sessionId, sessionImg, chatPartner, chatId }) => {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const scrollDownRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const pusherChannelName = toPusherKey(`chat:${chatId}:messages`);
+
+    pusherClient.subscribe(pusherChannelName);
+
+    const messageHandler = (message: Message) => {
+      setMessages((prev) => [message, ...prev])
+    };
+
+    pusherClient.bind("new_message", messageHandler);
+
+    return () => {
+      pusherClient.unsubscribe(pusherChannelName);
+      pusherClient.unbind("new_message", messageHandler);
+    };
+  }, []);
 
   return (
     <div

@@ -17,6 +17,7 @@ const SidebarChatList: FC<SidebarChatListProps> = ({ friends, sessionId }) => {
   const pathname = usePathname();
   // this state keeps track of the messages only when we are online
   const [unseenMessages, setUnseenMessages] = useState<Message[]>([]);
+  const [activeChats, setActiveChats] = useState(friends);
 
   useEffect(() => {
     const pusherChannelChats = toPusherKey(`user:${sessionId}:chats`);
@@ -50,8 +51,8 @@ const SidebarChatList: FC<SidebarChatListProps> = ({ friends, sessionId }) => {
       setUnseenMessages((prev) => [message, ...prev]);
     };
 
-    const newFriendHandler = () => {
-      router.refresh();
+    const newFriendHandler = (newFriend: User) => {
+      setActiveChats((prev) => [...prev, newFriend])
     };
 
     pusherClient.bind("new_unseenMessage", unseenMessageHandler);

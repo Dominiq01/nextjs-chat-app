@@ -1,6 +1,8 @@
 import { fetchRedis } from "@/helpers/redis";
 import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { pusherServer } from "@/lib/pusher";
+import { toPusherKey } from "@/lib/utils";
 import { z } from "zod";
 
 export async function POST(req: Request) {
@@ -27,6 +29,12 @@ export async function POST(req: Request) {
     if (!hasFriendRequest) {
       return new Response("No friend request", { status: 400 });
     }
+
+    await pusherServer.trigger(
+      toPusherKey(`user:${session.user.id}:incoming_friend_requests`),
+      "deny_friend",
+      {}
+    );
 
     await db.srem(`user:${session.user.id}:incoming_friend_requests`, idToRemove);
 

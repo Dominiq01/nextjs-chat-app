@@ -1,6 +1,5 @@
 "use client";
 
-import { fetchRedis } from "@/helpers/redis";
 import { pusherClient } from "@/lib/pusher";
 import { toPusherKey } from "@/lib/utils";
 import { User } from "lucide-react";
@@ -19,22 +18,34 @@ const FriendRequestsSidebarOption: FC<FriendRequestsSidebarOptionProps> = ({
   const [unseenRequestCount, setUnseenRequestCount] = useState(initialUnseenRequestCount);
 
   useEffect(() => {
-    const pusherChannelName = toPusherKey(`user:${sessionId}:incoming_friend_requests`);
+    const pusherChannelRequests = toPusherKey(
+      `user:${sessionId}:incoming_friend_requests`
+    );
+    const pusherChannelFriends = toPusherKey(`user:${sessionId}:friends`);
 
-    pusherClient.subscribe(pusherChannelName);
+    pusherClient.subscribe(pusherChannelRequests);
+    pusherClient.subscribe(pusherChannelFriends);
 
     const friendRequestsHandler = () => {
       setUnseenRequestCount((prev) => prev + 1);
     };
 
+    const addOrDenyFriendHandler = () => {
+      setUnseenRequestCount((prev) => prev - 1);
+    };
+
     pusherClient.bind("incoming_friend_requests", friendRequestsHandler);
-    
+    pusherClient.bind("new_friend", addOrDenyFriendHandler);
+    pusherClient.bind("deny_friend", addOrDenyFriendHandler);
 
     return () => {
-      pusherClient.unsubscribe(pusherChannelName);
+      pusherClient.unsubscribe(pusherChannelRequests);
+      pusherClient.unsubscribe(pusherChannelFriends);
       pusherClient.unbind("incoming_friend_requests", friendRequestsHandler);
+      pusherClient.unbind("new_friend", addOrDenyFriendHandler);
+      pusherClient.unbind("deny_friend", addOrDenyFriendHandler);
     };
-  }, []);
+  }, [sessionId]);
 
   return (
     <Link

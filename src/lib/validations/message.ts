@@ -1,9 +1,10 @@
+import { MAX_LENGTH } from "@/helpers/constants";
 import { z } from "zod";
 
 export const messageValidator = z.object({
   id: z.string(),
   senderId: z.string(),
-  text: z.string().max(2000),
+  text: z.string().max(MAX_LENGTH),
   timestamp: z.number(),
 });
 

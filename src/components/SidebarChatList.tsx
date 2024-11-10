@@ -53,6 +53,7 @@ const SidebarChatList: FC<SidebarChatListProps> = ({ friends, sessionId }) => {
 
     const newFriendHandler = (newFriend: User) => {
       setActiveChats((prev) => [...prev, newFriend])
+      router.refresh()
     };
 
     pusherClient.bind("new_unseenMessage", unseenMessageHandler);

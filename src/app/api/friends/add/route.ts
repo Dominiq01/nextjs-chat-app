@@ -58,6 +58,11 @@ export async function POST(req: Request) {
 
     // valid request, send friend request
 
+    console.log("PUSHER_APP_ID:", process.env.PUSHER_APP_ID);
+    console.log("PUSHER_APP_SECRET:", process.env.PUSHER_APP_SECRET);
+    console.log("NEXT_PUBLIC_PUSHER_APP_KEY:", process.env.NEXT_PUBLIC_PUSHER_APP_KEY);
+
+
     await pusherServer.trigger(toPusherKey(`user:${idToAdd}:incoming_friend_requests`), "incoming_friend_requests", {
       senderId: session.user.id,
       senderEmail: session.user.email
